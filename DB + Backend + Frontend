@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: strongpassword
+      POSTGRES_DB: restaurantdb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    command: sh -c "node migrations/run_migrations_and_seed.js && npm run dev"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgres://appuser:strongpassword@db:5432/restaurantdb
+      JWT_SECRET: supersecretjwtkey
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    command: sh -c "npm run dev -- --host"
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:4000
+
+volumes:
+  db_data:
